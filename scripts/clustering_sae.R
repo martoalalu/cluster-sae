@@ -310,8 +310,8 @@ library(rlist)
 
 sae_ruteo2 <- sae_ruteo
 
-api_key = Sys.getenv("AIzaSyBDPTuv605-cnY7PunKEhBq6lBAbXDrozA")
-register_google(key = "AIzaSyBDPTuv605-cnY7PunKEhBq6lBAbXDrozA")
+api_key = Sys.getenv("INSERTAR-API-KEY")
+register_google(key = "INSERTAR-API-KEY")
 
 #Reemplazo punto por coma para que tome bien las lat long
 sae_ruteo2[] <- lapply(sae_ruteo2, gsub, pattern=",", replacement=".")
@@ -340,7 +340,7 @@ for(i in 1:length(sae_ruteo_lista_1_2)){
   assign(paste0("sae_distance_", i), gmapsdistance(origin = sae_ruteo_lista_1_2[[i]]$latlon,
                                      destination = sae_ruteo_lista_1_2[[i]]$latlon,
                                      combinations = "all",
-                                     key = "AIzaSyBDPTuv605-cnY7PunKEhBq6lBAbXDrozA",
+                                     key = "INSERTAR-API-KEY",
                                      mode = "driving")$Distance[, -1])
 }
 
@@ -440,49 +440,7 @@ df <- as.tibble(df)
 View(df)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ---------------------------------------------------------------------------------------------------------------------
-bbox <- c(min(lamatanza_12$long, na.rm = TRUE)-0.04,
-          min(lamatanza_12$lat, na.rm = TRUE)-0.006,
-          max(lamatanza_12$long, na.rm = TRUE)+0.04,
-          max(lamatanza_12$lat, na.rm = TRUE)+0.006)
-
-lamat <- get_stamenmap(bbox = bbox,
-                       maptype = "toner-background",zoom=15)
-
-
-ggmap(lamat) +
-  geom_path(data = route, aes(x = lon, y = lat),  colour = "blue", size = 1, alpha = 0.5) +
-  geom_point(data = lamatanza_12, aes(x = long, y = lat), size = 3, alpha = 0.5) +
-  labs(title="Recorrido óptimo cluster 12 - La Matanza")
-
-
-
-
-
-
-
-
-
-
-
-
-#Calculo de ruta
-#Mapeamos para ver c?mo quedan las escuelas y el centroide de un cluster
+#Mapeamos para ver cOmo quedan las escuelas y el centroide de un cluster
 #La Matanza
 bbox <- c(min(sae_urbano_lista[[120]]$long, na.rm = TRUE)-0.1,
           min(sae_urbano_lista[[120]]$lat, na.rm = TRUE)-0.1,
@@ -509,105 +467,3 @@ ggmap(pba)+
 
 
 
-
-#Probamos armar la matriz
-lamatanza_12 <- filter(sae2,municipio=="LA MATANZA" & cluster_asignado_2==12)
-library(dplyr)
-library(purrr)
-library(ggmap)
-library(gmapsdistance)
-library(TSP)
-
-api_key = Sys.getenv("AIzaSyBDPTuv605-cnY7PunKEhBq6lBAbXDrozA")
-register_google(key = "AIzaSyBDPTuv605-cnY7PunKEhBq6lBAbXDrozA")
-
-#Reemplazo punto por coma para que tome bien las lat long
-lamatanza_12[] <- lapply(lamatanza_12, gsub, pattern=",", replacement=".")
-
-#Paso a numericos las lat y long
-lamatanza_12 <- lamatanza_12 %>%
-  mutate(lat=as.numeric(lat)) %>% 
-  mutate(long=as.numeric(long))%>%
-  rename(label=escuela)
-
-#Creo variable nueva que concatena lat long
-lamatanza_12 <- lamatanza_12 %>% 
-  mutate(latlon = sprintf("%f+%f", lat, long))
-
-
-lamatanza_12<-head(est_vl2)
-
-#Creo matriz de distancia
-distances2head <- gmapsdistance(origin = lamatanza_12$latlon,
-                                destination = lamatanza_12$latlon,
-                                combinations = "all",
-                                key = "AIzaSyBDPTuv605-cnY7PunKEhBq6lBAbXDrozA",
-                                mode = "driving")$Distance[, -1]
-
-#Paso los datos a km
-distances2head <- as.matrix(distances2head) / 1000
-
-#Asigna nombres de escuela a la matriz
-colnames(distances2head) <- lamatanza_12$label
-rownames(distances2head) <- lamatanza_12$label
-
-# Convert to distance matrix.
-distances2head <- as.dist(distances2head)
-
-tsp <- TSP(distances2head)
-
-methods <- c(
-  "nearest_insertion",
-  "farthest_insertion",
-  "cheapest_insertion",
-  "arbitrary_insertion",
-  "nn",
-  "repetitive_nn",
-  "two_opt"
-)
-
-tours <- methods %>% map(function(method) {
-  solve_TSP(tsp, method)
-})
-
-tour <- solve_TSP(tsp)
-#
-# Order of locations in tour.
-#
-tour_order <- as.integer(tour)
-#
-# Sort addresses.
-#
-lamatanza_12 <- lamatanza_12[tour_order,]
-
-# BUILD ROUTE ---------------------------------------------------------------------------------------------------------
-
-route <- lapply(seq(nrow(lamatanza_12) - 1), function(n) {
-  print(n)
-  route(lamatanza_12$latlon[n], lamatanza_12$latlon[n+1], structure = "route") %>%
-    mutate(section = n)
-})
-
-
-route <- route %>% bind_rows()
-
-# ---------------------------------------------------------------------------------------------------------------------
-bbox <- c(min(lamatanza_12$long, na.rm = TRUE)-0.04,
-          min(lamatanza_12$lat, na.rm = TRUE)-0.006,
-          max(lamatanza_12$long, na.rm = TRUE)+0.04,
-          max(lamatanza_12$lat, na.rm = TRUE)+0.006)
-
-lamat <- get_stamenmap(bbox = bbox,
-                      maptype = "toner-background",zoom=15)
-
-
-ggmap(lamat) +
-  geom_path(data = route, aes(x = lon, y = lat),  colour = "blue", size = 1, alpha = 0.5) +
-  geom_point(data = lamatanza_12, aes(x = long, y = lat), size = 3, alpha = 0.5) +
-  labs(title="Recorrido óptimo cluster 12 - La Matanza")
-
-route2 <-  filter(route,!is.na(minutes))
-
-sum(route2$minutes)
-sum(route2$km)
-    
