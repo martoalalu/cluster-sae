@@ -15,8 +15,8 @@ library(rlist)
 sae_ruteo2 <-  read.csv("C:/Users/20332842324/Desktop/sae/sae_ruteo4.csv", sep = ";",encoding = 'UTF-8', header = TRUE)
 
 
-api_key = Sys.getenv("AIzaSyD22ckgDJ7xCEJh697hps8BYUaRVrmEzzk")
-register_google(key = "AIzaSyD22ckgDJ7xCEJh697hps8BYUaRVrmEzzk")
+api_key = Sys.getenv("INSERTAR-API-KEY")
+register_google(key = "INSERTAR-API-KEY")
 
 #Reemplazo punto por coma para que tome bien las lat long
 sae_ruteo2[] <- lapply(sae_ruteo2, gsub, pattern=",", replacement=".")
@@ -52,14 +52,15 @@ for(i in 1:length(sae_ruteo_lista_124_125)){
   assign(paste0("sae_distance_", i), gmapsdistance(origin = sae_ruteo_lista_124_125[[i]]$latlon,
                                                    destination = sae_ruteo_lista_124_125[[i]]$latlon,
                                                    combinations = "all",
-                                                   key = "AIzaSyD22ckgDJ7xCEJh697hps8BYUaRVrmEzzk",
+                                                   key = "INSERTAR-API-KEY",
                                                    mode = "driving")$Distance[, -1])
 }
 
+#Por si alguno da error
 sae_distance_92 <- gmapsdistance(origin = sae_ruteo_lista_124_125[[10]]$latlon,
               destination = sae_ruteo_lista_83_100[[10]]$latlon,
               combinations = "all",
-              key = "AIzaSyD22ckgDJ7xCEJh697hps8BYUaRVrmEzzk",
+              key = "INSERTAR-API-KEY",
               mode = "driving")$Distance[, -1]
 
 
@@ -123,7 +124,7 @@ for(i in 1:length(sae_ruteo_lista_124_125)){
 
 
 # BUILD ROUTE ---------------------------------------------------------------------------------------------------------
-set.api.key("AIzaSyD22ckgDJ7xCEJh697hps8BYUaRVrmEzzk")
+set.api.key("INSERTAR-API-KEY")
 
 
 
@@ -157,3 +158,19 @@ df <- as.data.frame(df)
 
 
 fwrite(df,"C:/Users/20332842324/Desktop/sae/rutas_124_125.csv")
+
+#Mapeamos para ver recorridos
+bbox <- c(min(sae_ruteo_lista[[1]]$long, na.rm = TRUE)-0.04,
+          min(sae_ruteo_lista[[1]]$lat, na.rm = TRUE)-0.006,
+          max(sae_ruteo_lista[[1]]$long, na.rm = TRUE)+0.04,
+          max(sae_ruteo_lista[[1]]$lat, na.rm = TRUE)+0.006)
+
+lamat <- get_stamenmap(bbox = bbox,
+                       maptype = "toner-background",zoom=15)
+
+
+ggmap(lamat) +
+  geom_path(data = route_1, aes(x = lon, y = lat),  colour = "blue", size = 1, alpha = 0.5) +
+  geom_point(data = sae_ruteo_lista[[1]], aes(x = long, y = lat), size = 3, alpha = 0.5) +
+  labs(title="Recorrido óptimo cluster 12 - La Matanza")
+
